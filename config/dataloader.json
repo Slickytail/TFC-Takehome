@@ -1,0 +1,12 @@
+{
+  "root": "data",
+  "subsets": null,
+  "min_seq_len": 64,
+  "max_seq_len": 512,
+  "cutoff_low": 0.8,
+  "cutoff_high": 0.95,
+  "buffer_bytes": 4294967296,
+  "seed": 0,
+  "outlier_threshold": 5.0,
+  "max_batch_vars": 25
+}

@@ -1,0 +1,13 @@
+{
+  "resume_from": null,
+  "max_steps": 20000,
+  "lr": 3e-4,
+  "save_to": "checkpoints",
+  "save_every": 2000,
+  "eval_every": 2000,
+  "batch_size": 4,
+  "warmup_steps": 5000,
+  "grad_accum_steps": 1,
+  "clip_grad_norm": 10.0,
+  "eval_max_samples": 500
+}
