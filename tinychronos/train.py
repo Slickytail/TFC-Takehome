@@ -46,8 +46,8 @@ class TrainConfig:
     eval_every: int = 500
     batch_size: int = 1
     warmup_steps: int = 100  # linear warmup from 0 to lr
-    eval_max_samples: int = 100  # fixed-size sample of the test split for eval
-    grad_accum_steps: int = 1  # micro-batches per optimizer step
+    eval_max_samples: int = 100  # fixed-size sample of the valid split for eval
+    grad_accum_steps: int = 1  # update the optimizer every N batches
     # ~median observed global grad norm (see scripts/grad_norm_probe.py);
     # typical steps clip mildly, spikes are bounded.
     clip_grad_norm: float = 10.0  # 0 disables gradient clipping
@@ -167,13 +167,15 @@ def train(
     dataset = TinyChronosDataset(data_config, batch_size=train_config.batch_size)
     dataloader = DataLoader(dataset, batch_size=None)  # dataset yields batches
 
-    # Fixed evaluation set: the same samples every eval. All test subsets (not
-    # just the training subsets), capped at eval_max_samples. The eval dataset
-    # gets a small buffer: it only needs to yield eval_max_samples samples.
+    # Fixed evaluation set: the same samples every eval. All valid-split
+    # subsets (the file-level 10% carve-out of the old test split; see
+    # scripts/split_test_valid.py), capped at eval_max_samples. The eval
+    # dataset gets a small buffer: it only needs to yield eval_max_samples
+    # samples. The full test split is reserved for evaluate.py.
     eval_config = TinyChronosDataConfig.from_dict(
         {
             **data_config.to_dict(),
-            "split": "test",
+            "split": "valid",
             "subsets": None,
             "buffer_bytes": min(data_config.buffer_bytes, 256 * 1024**2),
         }
@@ -182,7 +184,7 @@ def train(
         islice(TinyChronosDataset(eval_config), train_config.eval_max_samples)
     )
     if not eval_samples:
-        print("warning: no eval samples found in the test split")
+        print("warning: no eval samples found in the valid split")
 
     print(
         f"model: {sum(p.numel() for p in model.parameters()):,} params | "
@@ -225,10 +227,10 @@ def train(
 
             y_hat = model(x_n, time_ids, model_mask)
 
-            # 5. quantile loss per element everywhere
+            # quantile loss per element everywhere
             loss = quantile_loss(y_hat, x_n, model.quantiles)
 
-            # 6. loss on observed, non-extreme future targets only; average
+            # loss on observed, non-extreme future targets only; average
             # per batch elem, then across the batch
             loss_mask = build_loss_mask(batch, missing)
             per_elem = (loss * loss_mask).sum(dim=(1, 2)) / loss_mask.sum(
@@ -260,9 +262,7 @@ def train(
             )
 
             if step % train_config.eval_every == 0 and eval_samples:
-                metrics = evaluate_model(
-                    model, eval_samples, outlier_threshold=data_config.outlier_threshold
-                )
+                metrics = evaluate_model(model, eval_samples)
                 pbar.write(
                     f"eval @ step {step}: "
                     + " ".join(f"{k} MASE={v:.4f}" for k, v in metrics.items())

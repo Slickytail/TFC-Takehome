@@ -1,7 +1,7 @@
 {
   "resume_from": null,
   "max_steps": 20000,
-  "lr": 3e-4,
+  "lr": 1e-4,
   "save_to": "checkpoints",
   "save_every": 2000,
   "eval_every": 2000,

@@ -47,7 +47,7 @@ class TinyChronosDataConfig:
     def __init__(
         self,
         root: str = "data",
-        split: str = "train",  # subdirectory of root: train / test
+        split: str = "train",  # subdirectory of root: train / valid / test
         subsets: Optional[list[str]] = None,  # None = all subdirectories
         min_seq_len: int = 64,
         max_seq_len: int = 512,

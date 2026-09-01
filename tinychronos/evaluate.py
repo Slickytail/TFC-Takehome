@@ -2,9 +2,13 @@
 
 Two entry points:
   - `evaluate_model(model, samples)`: called from the training loop on a fixed
-    sample of the test split (no grad, eval mode).
+    sample of the valid split (no grad, eval mode).
   - CLI: `python -m tinychronos.evaluate --checkpoint CKPT [--max-samples N]`
     runs the same metrics over the whole test split.
+
+The valid split is a file-level ~10% carve-out of the test split (see
+scripts/split_test_valid.py): in-training validation uses only it; the CLI
+reports final numbers on the untouched test split.
 
 Metrics: MASE (mean absolute scaled error), computed in the per-variable
 linear-normalized space (mean 0, variance 1 over the observed history — not
@@ -20,9 +24,10 @@ Shared forward-pass helpers (`history_stats`, `asinh_normalize`) live here so
 that train.py can import them without a circular import.
 
 Note: the dataloader masks indicate genuine NaN/inf in both regions. The
-model input hides the future (mask 0) as usual; scoring covers future target
-positions that are observed and non-extreme (|asinh-normalized| within the
-outlier threshold).
+model input hides the future (mask 0) as usual; scoring covers all observed
+future target positions — no outlier filtering, so evaluation is on the raw
+data (the training-time outlier_threshold is intentionally not applied
+here).
 """
 
 import argparse
@@ -139,9 +144,12 @@ def evaluate_model(
     model: TinyChronos,
     samples: Iterable[dict],
     baselines: Optional[Baselines] = None,
-    outlier_threshold: float = 7.0,
 ) -> dict[str, float]:
     """MASE for the model (median quantile) and each baseline over `samples`.
+
+    Unlike the training loss, no outlier filtering is applied: every future
+    target position observed in the raw data (dataloader mask, i.e. genuine
+    NaN/inf excluded) is scored.
 
     Follows the GIFT-eval / gluonts convention: the scale is the in-sample
     MAE of the seasonal naive forecast (seasonality from the sample's `freq`
@@ -183,10 +191,8 @@ def evaluate_model(
             x_past_lin = (x_past - mu[0]) / sigma[0]
             seasonality = get_seasonality(sample["freq"])
 
-            # Score only observed, non-extreme future targets.
-            valid = (sample["mask_future"][:n_var_target] > 0) & (
-                torch.asinh(y_true[:n_var_target]).abs() <= outlier_threshold
-            )
+            # Score all observed future targets (raw data, no outlier filter).
+            valid = sample["mask_future"][:n_var_target] > 0
             n_valid = int(valid.sum())
             if n_valid == 0:
                 continue
