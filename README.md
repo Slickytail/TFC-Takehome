@@ -50,9 +50,9 @@ Hooray, we beat the seasonal naive prediction by a statistically significant amo
 I spent about eight hours on this across a few days, including time spent for training.
 
 ## Results 
-The MASE we got to only slightly beats the naive forecaster, so the model is not really a "strong forecaster". However, based on the GIFT-eval leaderboards, it seems that beating the naive forecast by even a little bit over a diverse test set shows really learning progress. I therefore conclude that our model has learned weak but real forecasting abilities, rather than simply getting lucky with the eval set.
+The MASE we got to only slightly beats the naive forecaster, so the model is not really a "strong forecaster". However, based on the GIFT-eval leaderboards, it seems that beating the naive forecast by even a little bit over a diverse test set shows really learning progress. I therefore conclude that our model has learned weak but real forecasting abilities, rather than simply getting lucky with the test set.
 
 The main steps that I expect to improve the model would be:
-   - train longer! my MASE (over a tiny test set) and loss continued to decrease stably at the end of training.
+   - train longer! my MASE (over a tiny validation set) and loss continued to decrease stably at the end of training.
    - larger batch size. transformer models benefit enormously from large batch sizes during pretraining. 
    - a more reasoned balancing of the dataset. The dataset contains sequences of wildly varying lengths, subsets of different sizes, and different numbers of variables. It's quite likely that the loss landscape of this minimal example is dominated by a particular subset or type of data.

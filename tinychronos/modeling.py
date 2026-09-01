@@ -39,7 +39,9 @@ class TinyChronosConfig:
         self.n_layers = n_layers
         self.n_heads = n_heads
         self.quantiles = (
-            list(quantiles) if quantiles is not None else [round(0.1 * i, 1) for i in range(1, 10)]
+            list(quantiles)
+            if quantiles is not None
+            else [round(0.1 * i, 1) for i in range(1, 10)]
         )
         self.max_seq_len = max_seq_len
         self.rope_theta = rope_theta
@@ -94,7 +96,11 @@ def apply_rope(
     """
     head_dim = q.shape[-1]
     inv_freq = 1.0 / (
-        theta ** (torch.arange(0, head_dim, 2, device=q.device, dtype=torch.float32) / head_dim)
+        theta
+        ** (
+            torch.arange(0, head_dim, 2, device=q.device, dtype=torch.float32)
+            / head_dim
+        )
     )  # (head_dim/2,)
     angles = positions.unsqueeze(-1).float() * inv_freq  # (N, t, head_dim/2)
     emb = torch.cat([angles, angles], dim=-1)  # (..., t, head_dim)
@@ -223,6 +229,7 @@ class TinyChronosQuantileHead(nn.Module):
             nn.GELU(),
             nn.Linear(4 * config.d_model, config.n_quantiles),
         )
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.mlp(self.norm(x))
 

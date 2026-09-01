@@ -46,7 +46,6 @@ from tinychronos.utils import (
     history_stats,
 )  # noqa: F401 (helpers re-exported)
 
-
 # ---------------------------------------------------------------------------
 # Baselines. Register new ones with @baseline; they automatically join the
 # reported metrics.
@@ -108,6 +107,7 @@ def seasonal_naive(
 # ---------------------------------------------------------------------------
 # Metrics
 # ---------------------------------------------------------------------------
+
 
 def _median_index(quantiles: torch.Tensor) -> int:
     return int((quantiles - 0.5).abs().argmin().item())
@@ -231,11 +231,14 @@ def evaluate_model(
 # CLI
 # ---------------------------------------------------------------------------
 
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Evaluate a TinyChronos checkpoint")
     parser.add_argument("--checkpoint", required=True, help="save_pretrained dir")
     parser.add_argument(
-        "--data-config", default="config/dataloader.json", help="path to data config json"
+        "--data-config",
+        default="config/dataloader.json",
+        help="path to data config json",
     )
     parser.add_argument("--split", default="test", help="which split to evaluate")
     parser.add_argument(

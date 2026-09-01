@@ -75,6 +75,7 @@ class TrainConfig:
         with open(path, "w") as f:
             json.dump(self.to_dict(), f, indent=2)
 
+
 def quantile_loss(
     y_hat: torch.Tensor, y: torch.Tensor, quantiles: torch.Tensor
 ) -> torch.Tensor:
@@ -215,7 +216,9 @@ def train(
 
                 # 3. missing = genuine NaN/inf (dataloader mask) OR extreme values
                 # (|asinh-normalized| above the threshold). Comparisons detach.
-                observed = torch.cat([batch["mask_past"], batch["mask_future"]], dim=2) > 0
+                observed = (
+                    torch.cat([batch["mask_past"], batch["mask_future"]], dim=2) > 0
+                )
                 extreme = x_n.abs() > data_config.outlier_threshold
                 missing = (~observed) | extreme  # (B, n_var, t)
 
@@ -309,9 +312,7 @@ def main() -> None:
     model_config = TinyChronosConfig.from_json(args.model_config)
     data_config = TinyChronosDataConfig.from_json(args.data_config)
     train_config = (
-        TrainConfig.from_json(args.train_config)
-        if args.train_config
-        else TrainConfig()
+        TrainConfig.from_json(args.train_config) if args.train_config else TrainConfig()
     )
     train(model_config, data_config, train_config)
 

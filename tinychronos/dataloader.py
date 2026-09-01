@@ -219,7 +219,9 @@ class TinyChronosDataset(IterableDataset):
         # Buffer organized into buckets by total n_var. Each bucket holds
         # payloads (row groups); rows are consumed one at a time so a payload
         # stays resident until exhausted and the buffer drains/refills.
-        buckets: dict[int, list[tuple[list[dict], int]]] = {}  # n_var -> [(rows, nbytes)]
+        buckets: dict[int, list[tuple[list[dict], int]]] = (
+            {}
+        )  # n_var -> [(rows, nbytes)]
         bucket_rows: dict[int, int] = {}  # remaining rows per bucket
         buffered_bytes = 0
         initial_fill = True  # only the startup preload gets a progress bar
@@ -267,7 +269,9 @@ class TinyChronosDataset(IterableDataset):
             if nvar > cfg.max_batch_vars:
                 k = 1
             weights = np.array([len(r) for r, _ in payloads], dtype=np.float64)
-            idx = rng.choice(len(payloads), size=k, replace=False, p=weights / weights.sum())
+            idx = rng.choice(
+                len(payloads), size=k, replace=False, p=weights / weights.sum()
+            )
             rows, freqs, nvts = [], [], []
             for i in sorted(idx):  # sorted so payload removal stays valid
                 rows_list, nb = payloads[i]
